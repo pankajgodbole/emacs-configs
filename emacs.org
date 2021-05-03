@@ -3,7 +3,7 @@
 #+SUBTITLE: $HOME/.emacs.d/emacs.org
 #+LANGUAGE: en
 #+AUTHOR: Pankaj Godbole
-#+DATE: 2020-10-20
+#+DATE: 2021-05-03
 #+DESCRIPTION: An organizer for Emacs' init.el
 
 * TODO
@@ -59,15 +59,6 @@
 	       :config (dashboard-setup-startup-hook)
 	       (setq dashboard-items '((recents . 12)))
 	       (setq dashboard-banner-logo-title "Hello!"))
-
-  ;; Switch windows
-  (use-package switch-window
-	       :config (setq switch-window-threshold 2)
-	       (setq switch-window-increase 4)
-	       (setq switch-window-input-style 'minibuffer)
-	       (setq switch-window-shortcut-style 'qwerty)
-	       (setq switch-window-shortcuts '("a" "s" "d" "f" "j" "k" "l"))
-	       :bind ([remap other-window] . switch-window))
 
   ;; Projectile
   (use-package projectile
@@ -1177,6 +1168,12 @@
   ;; Define a new prefix key
   (define-prefix-command 'new-key-map)
   (global-set-key (kbd "C-SPC") 'new-key-map)
+
+  ;; Move to another window
+  (global-set-key (kbd "C-SPC <left>")  'windmove-left)
+  (global-set-key (kbd "C-SPC <right>") 'windmove-right)
+  (global-set-key (kbd "C-SPC <up>")    'windmove-up)
+  (global-set-key (kbd "C-SPC <down>")  'windmove-down)
 
   ;; Set mark
   (global-set-key (kbd "C-SPC s m") 'set-mark-command)
