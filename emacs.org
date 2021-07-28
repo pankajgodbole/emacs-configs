@@ -3,7 +3,7 @@
 #+SUBTITLE: $HOME/.emacs.d/emacs.org
 #+LANGUAGE: en
 #+AUTHOR: Pankaj Godbole
-#+DATE: 2021-05-03
+#+DATE: 2021-05-18
 #+DESCRIPTION: An organizer for Emacs' init.el
 
 * TODO
@@ -11,15 +11,21 @@
 
 * Custom functions
 #+begin_src emacs-lisp
+  ;;
+  ;; CIDER
+  ;;
+  ;; Show a fn or ns docstring's key pieces as inline overlay.
   (defvar my-cider-inline-docs-opened-p nil
     "Toggle to support an inline help being open (expanded) or not.")
-  (defun my-cider-inline-docs-toggle ()
+
+  (defun my/cider-inline-docs-toggle
+      ()
     "Show a fn or ns docstring's key pieces as inline overlay."
     (interactive)
     (require 'quick-peek)
-    (if my-cider-inline-docs-opened-p
+    (if my/cider-inline-docs-opened-p
 	(progn
-	  (setq my-cider-inline-docs-opened-p nil)
+	  (setq my/cider-inline-docs-opened-p nil)
 	  (quick-peek-hide))
       ;; If not on a word, let it error
       (let* ((info    (cider-var-info (thing-at-point 'word 'no-properties)))
@@ -31,8 +37,14 @@
 	      (quick-peek-show
 	       (concat (if arglist (concat arglist "\n") "")
 		       (replace-regexp-in-string "^ +" "" doc)))
-	      (setq my-cider-inline-docs-opened-p t))
+	      (setq my/cider-inline-docs-opened-p t))
 	  (message "Unable to do doc look-up: missing docstring or invalid")))))
+
+  ;; Customize REPL prompt
+  (defun my/cider-repl-prompt-default-newline
+      (n)
+    "Takes the name of a namespace (N) and return the default REPL prompt followed by a newline."
+    (format "%s> \n" n))
 #+end_src
 * External packages
 #+BEGIN_SRC emacs-lisp
@@ -56,9 +68,7 @@
 
   ;; Show recently opened files while starting up
   (use-package dashboard
-	       :config (dashboard-setup-startup-hook)
-	       (setq dashboard-items '((recents . 12)))
-	       (setq dashboard-banner-logo-title "Hello!"))
+	       :config (dashboard-setup-startup-hook))
 
   ;; Projectile
   (use-package projectile
@@ -75,48 +85,6 @@
       (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
     :config
     (progn
-      (setq treemacs-position                      'right
-	    treemacs-width                         24
-	    treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
-	    treemacs-deferred-git-apply-delay      0.5
-	    treemacs-directory-name-transformer    #'identity
-	    treemacs-display-in-side-window        t
-	    treemacs-eldoc-display                 t
-	    treemacs-file-event-delay              5000
-	    treemacs-file-extension-regex          treemacs-last-period-regex-value
-	    treemacs-file-follow-delay             0.2
-	    treemacs-file-name-transformer         #'identity
-	    treemacs-follow-after-init             t
-	    treemacs-git-command-pipe              ""
-	    treemacs-goto-tag-strategy             'refetch-index
-	    treemacs-indentation                   2
-	    treemacs-indentation-string            " "
-	    treemacs-is-never-other-window         nil
-	    treemacs-max-git-entries               5000
-	    treemacs-missing-project-action        'ask
-	    treemacs-move-forward-on-expand        nil
-	    treemacs-no-png-images                 nil
-	    treemacs-no-delete-other-windows       t
-	    treemacs-project-follow-cleanup        nil
-	    treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
-	    treemacs-read-string-input             'from-child-frame
-	    treemacs-recenter-distance             0.1
-	    treemacs-recenter-after-file-follow    nil
-	    treemacs-recenter-after-tag-follow     nil
-	    treemacs-recenter-after-project-jump   'always
-	    treemacs-recenter-after-project-expand 'on-distance
-	    treemacs-show-cursor                   nil
-	    treemacs-show-hidden-files             t
-	    treemacs-silent-filewatch              nil
-	    treemacs-silent-refresh                nil
-	    treemacs-sorting                       'alphabetic-asc
-	    treemacs-space-between-root-nodes      t
-	    treemacs-tag-follow-cleanup            t
-	    treemacs-tag-follow-delay              1.5
-	    treemacs-user-mode-line-format         nil
-	    treemacs-user-header-line-format       nil
-	    treemacs-workspace-switch-cleanup      nil)
-
       ;; The default width and height of the icons is 22 pixels. If you are
       ;; using a Hi-DPI display, uncomment this to double the icon size.
       ;;(treemacs-resize-icons 44)
@@ -196,6 +164,7 @@
 
   ;; Clojure
   (use-package clojure-mode)
+  (use-package zprint-mode)
 
   ;; CIDER
   (use-package cider)
@@ -204,8 +173,11 @@
   (use-package lispy)
 
   ;; Popup documentation
-  (use-package company-quickhelp
-	       :config (setq company-quickhelp-delay 1))
+  (use-package company-quickhelp)
+
+  ;; AUCTeX for LaTeX
+  (use-package tex
+    :ensure auctex)
 
   ;; YAML
   (use-package yaml-mode
@@ -242,8 +214,7 @@
   ;; Configure the mode-line to match the one used by Spacemacs
   (use-package spaceline
 	       :config (require 'spaceline-config)
-	       (spaceline-spacemacs-theme)
-	       (setq powerline-default-separator (quote arrow)))
+	       (spaceline-spacemacs-theme))
 
   ;; Hide which minor modes are enabled
   (use-package diminish
@@ -286,16 +257,6 @@
   ;; Discord
   (use-package elcord)
 #+END_SRC
-* Starting up
-** Do not open the startup screen
-#+BEGIN_SRC emacs-lisp
-  (setq inhibit-startup-screen t)
-#+END_SRC
-** Autosave buffer, but do not create backup files
-#+BEGIN_SRC emacs-lisp
-  (setq make-backup-file nil)
-  (setq auto-save-default t)
-#+END_SRC
 * Managing this file (emacs.org)
 ** Load this file
 #+BEGIN_SRC emacs-lisp
@@ -305,21 +266,39 @@
 #+END_SRC
 
 * Org settings
-** Inserting Org templates
-#+BEGIN_SRC emacs-lisp
-  (setq org-structure-template-alist
-    '(("l" . "src lisp\n\n\n")
-      ("e" . "src emacs-lisp\n")
-      ("s" . "src")))
-#+END_SRC
-**
-** Adding support for Common Lisp code block in org-mode
+** Adding support for Common Lisp code blocks in org-mode
 #+BEGIN_SRC emacs-lisp
   (org-babel-do-load-languages
     'org-babel-load-languages
     '((lisp . t)))
 #+END_SRC
+** Adding support for Clojure code blocks in org-mode
+#+BEGIN_SRC emacs-lisp
+  (require 'org)
+  (require 'ob-clojure)
+  (require 'cider)
 
+  (defcustom org-babel-clojure-backend nil
+    "Backend used to evaluate Clojure code blocks."
+    :group 'org-babel
+    :type '(choice
+	    (const :tag "inf-clojure" inf-clojure)
+	    (const :tag "cider" cider)
+	    (const :tag "slime" slime)
+	    (const :tag "Not configured yet" nil)))
+#+END_SRC
+** Open PDFs visited in Org-mode in Evince (and not in the default choice)
+#+begin_src emacs-lisp
+  (eval-after-load "org"
+		   '(progn
+		     ;; Change .pdf association directly within the alist
+		     (setcdr (assoc "\\.pdf\\'" org-file-apps) "evince %s")))
+#+end_src
+** Ignore Org headers when exporting and Org-mode file to LaTeX
+#+begin_src emacs-lisp
+  (require 'ox-extra)
+  (ox-extras-activate '(latex-header-blocks ignore-headlines))
+#+end_src
 * Appearance (Look)
 ** Menu-bar, tool-bar, scroll-bar, line numbers, column numbers, time, unhighlight the cursor-line, etc
 #+BEGIN_SRC emacs-lisp
@@ -331,9 +310,13 @@
   (global-visual-line-mode t)                      ;; Wrap long lines
   (line-number-mode 1)
   (column-number-mode 1)
-  (setq display-time-24hr-format t)
   (display-time-mode)
   (global-hl-line-mode -1)                         ;; Unhighlight the cursor-line
+
+  ;; Show the word count in the mode line
+  (load "/home/p/.emacs.d/word-count.el")
+  (require 'word-count)
+  ;;(word-count-mode)
 #+END_SRC
 ** Customize the face
 #+BEGIN_SRC emacs-lisp
@@ -377,21 +360,9 @@
   (when window-system
     (global-prettify-symbols-mode t))
 #+END_SRC
-* Feel
-#+BEGIN_SRC emacs-lisp
-  (setq scroll-conservatively 100)
-  (setq ring-bell-function 'ignore)
-  (setq blink-cursor-mode nil)
-#+END_SRC
 ** Shortforms for 'yes' and 'no'
 #+BEGIN_SRC emacs-lisp
   (defalias 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
-
-* Editing
-** Edit code in a new window instead of splitting the current window (C-c ')
-#+BEGIN_SRC emacs-lisp
-  (setq org-src-window-setup 'current-window)
 #+END_SRC
 ** Enable editing subwords
 #+BEGIN_SRC emacs-lisp
@@ -404,7 +375,7 @@
     (backward-kill-word 1)
     (kill-word 1))
 #+END_SRC
-**
+#+BEGIN_SRC emacs-lisp
 ;; Prefer UTF-8 encoding for code
   (prefer-coding-system 'utf-8-unix)
 #+end_src
@@ -445,20 +416,6 @@
     "insert the current time (1-week scope) into the current buffer."
     (interactive)
     (format-time-string current-time-format (current-time)))
-
-  (setq eshell-prompt-function
-	(lambda ()
-	  (concat "\n"
-		  (show-current-date-time)
-		  "\n"
-		  (getenv "USER") "@" (getenv "HOST") ":"
-		  ((lambda (p-lst)
-		     (mapconcat (lambda (elm) elm)
-				  p-lst
-				  "/"))
-		   (split-string (eshell/pwd) "/"))
-		  "\n"
-		  (if (= (user-uid) 0) "# " "$ "))))
 #+end_src
 ** Setting environment variables
 #+BEGIN_SRC emacs-lisp
@@ -564,9 +521,6 @@
 # #+BEGIN_SRC emacs-lisp
 #   (require 'ido)
 #   (ido-mode t)
-#   (setq ido-everywhere t)
-#   (setq ido-enable-flex-matching nil)
-#   (setq ido-create-new-buffer 'always)
 # #+END_SRC
 * Terminal
 ** Setting the default shell to bash
@@ -578,10 +532,6 @@
 #+END_SRC
 
 * Buffers
-** Executing iBuffer commands immediately without asking for confirmation
-#+BEGIN_SRC emacs-lisp
-  (setq ibuffer-expert t)
-#+END_SRC
 ** Killing buffers
 *** Kill all buffers
 #+BEGIN_SRC emacs-lisp
@@ -600,7 +550,6 @@
 *** Color and/or highlight matching parentheses
 #+BEGIN_SRC emacs-lisp
   (rainbow-delimiters-mode t)
-  (setq show-paren-style 'mixed)
   ;; Toggle highlighting matching parentheses, brackets or braces
   (show-paren-mode 0)
 #+END_SRC
@@ -858,16 +807,9 @@
 #+end_src
 * Common Lisp
 ** Using SLIME
-*** Install and configure SLIME
 #+BEGIN_SRC emacs-lisp
   (with-eval-after-load 'slime
-      (slime-setup '(slime-fancy))
-      (setq slime-lisp-implementations `((sbcl ("/usr/local/bin/sbcl")))
-	    inferior-lisp-program 'sbcl
-	    slime-default-lisp 'sbcl
-	    slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-            ;slime-contribs '(slime-fancy)
-	    lisp-indent-function 'common-lisp-indent-function))
+      (slime-setup '(slime-fancy)))
 
   ;; Reading the Common Lisp HyperSpec
   (load "/home/p/quicklisp/clhs-use-local.el" t)
@@ -876,21 +818,136 @@
 
 *** Wrap line with parentheses
     . TODO
-* Clojure
+* Communicating
+** ERC
+*** Connecting to a server automatically
 #+BEGIN_SRC emacs-lisp
-  (setq cider-show-error-buffer 'only-in-repl)
+  (defun irc
+      ()
+    "Connect to freenode."
+    (interactive)
+    (erc :server "irc.freenode.net"
+	 :port 6667
+	 :nick "pankajsg"
+	 :password "B0xm4k3r"))
 #+END_SRC
-* Blogging
-** Minimal setup using org-static-blog
+* Working with Databases
+#+BEGIN_SRC emacs-lisp
+  ;;; Open SQLi in the same window
+  (add-to-list 'same-window-buffer-names "*SQL*")
+
+  ;;; Save history between sessions
+  (defun save-sql-history ()
+    (let ((lval 'sql-input-ring-file-name)
+          (rval 'sql-product))
+      (if (symbol-value rval)
+          (let ((filename
+                 (concat "~/.emacs.d/sql/"
+                         (symbol-name (symbol-value rval))
+                         "-history.sql")))
+            (set (make-local-variable lval) filename))
+        (error
+         (format "SQL history will not be saved because %s is nil"
+                 (symbol-name rval))))))
+#+END_SRC
+* Playing music with Music Player
+** The music server
+*** Setting up the music server - Music Player daemon (mpd)
+#+BEGIN_SRC emacs-lisp
+  (use-package emms
+    :config (require 'emms-setup)
+	    (require 'emms-player-mpd)
+	    (emms-all)
+#+END_SRC
+*** Starting the daemon from within Emacs
+#+BEGIN_SRC emacs-lisp
+  (defun mpd/start-daemon ()
+    "Starts mpd, connects to it and syncs the metadata cache."
+    (interactive)
+    (shell-command "mpd")
+    (mpd/update-database)
+    (emms-player-mpd-connect)
+    (emms-cache-set-from-mpd-all)
+    (message "MPD has been started."))
+#+END_SRC
+*** Stopping the daemon
+#+BEGIN_SRC emacs-lisp
+  (defun mpd/stop-daemon ()
+    "Stops music playback and kills the music daemon."
+    (interactive)
+    (emms-stop)
+    (call-process "killall" nil nil nil "mpd")
+    (message "MPD has been stopped"))
+#+END_SRC
+** Updating the music database
+#+BEGIN_SRC emacs-lisp
+  (defun mpd/update-database ()
+    "Updates the MPD database synchronously."
+    (interactive)
+    (call-process "mpc" nil nil nil "update")
+    (message "Music database has been updated."))
+#+END_SRC
+* Settings
 #+begin_src emacs-lisp
-  (setq org-static-blog-publish-title     "My Static Org Blog")
+  ;; Emacs feel
+  (setq scroll-conservatively             100
+	ring-bell-function                'ignore
+	blink-cursor-mode                 nil)
+
+  ;; Show 24hr clock
+  (setq display-time-24hr-format          t)
+
+  ;; Do not open the startup screen
+  (setq inhibit-startup-screen            t)
+
+  ;; Do not create backup files
+  (setq make-backup-file                  nil)
+
+  ;; Autosave open buffer
+  ;; (setq auto-save-default              t)
+
+  ;; Parentheses in Lisp code
+  (setq show-paren-style                  'mixed)
+
+  ;; Org code templates
+  (setq org-structure-template-alist      '(("c" . "src clojure")
+					    ("e" . "src emacs-lisp")
+					    ("l" . "src lisp")
+					    ("s" . "src")))
+
+  ;; Edit code in a new window instead of splitting the current window (C-c ')
+  (setq org-src-window-setup              'current-window)
+
+  ;; Fontify the code in Org code blocks
+  (setq org-src-fontify-natively          t)
+
+  ;; Clojure backend for Org mode
+  (setq org-babel-clojure-backend         'cider)
+
+  ;; SLIME
+  (setq slime-lisp-implementations        `((sbcl ("/usr/local/bin/sbcl")))
+	inferior-lisp-program             'sbcl
+	slime-default-lisp                'sbcl
+	slime-complete-symbol-function    'slime-fuzzy-complete-symbol
+	;slime-contribs                   '(slime-fancy)
+	lisp-indent-function              'common-lisp-indent-function)
+
+  ;;
+  ;; CIDER
+  ;;
+  (setq cider-show-error-buffer 'only-in-repl)
+  ;; Custom prompt
+  (setq cider-repl-prompt-function        #'my/cider-repl-prompt-default-newline)
+
+  ;; Blogging: org-static-blog
+  (setq org-static-blog-publish-title     "Insights into Clojure")
   (setq org-static-blog-publish-url       "https://pankajgodbole.github.io/")
-  (setq org-static-blog-publish-directory "~/pankajgodbole.github.io/")
-  (setq org-static-blog-posts-directory   "~/pankajgodbole.github.io/posts/")
-  (setq org-static-blog-drafts-directory  "~/pankajgodbole.github.io/drafts/")
-  (setq org-static-blog-enable-tags t)
-  (setq org-export-with-toc nil)
-  (setq org-export-with-section-numbers nil)
+  (setq org-static-blog-publish-directory "~/Clojure/Writing/pankajgodbole.github.io/")
+  (setq org-static-blog-posts-directory   "~/Clojure/Writing/pankajgodbole.github.io/posts/")
+  (setq org-static-blog-drafts-directory  "~/Clojure/Writing/pankajgodbole.github.io/drafts/")
+  (setq org-static-blog-enable-tags       t)
+  (setq org-export-with-toc               nil)
+  (setq org-export-with-section-numbers   nil)
 
   ;; This header is inserted into the <head> section of every page:
   ;; (you will need to create the style sheet at
@@ -907,7 +964,7 @@
   ;; This particular HTML creates a <div> with a simple linked headline
   (setq org-static-blog-page-preamble
   "<div class=\"header\">
-    <a href=\"https://pankajgodbole.github.io\">My Static Org Blog</a>
+    <a href=\"https://pankajgodbole.github.io\"> Insights into Clojure </a>
   </div>")
 
   ;; This postamble is inserted at the end of the <body> of every page:
@@ -916,10 +973,6 @@
   (setq org-static-blog-page-postamble
   "<div id=\"archive\">
     <a href=\"https://pankajgodbole.github.io/archive.html\">Other posts</a>
-  </div>
-  <div>
-   Icon(s) made by <a href="https://www.freepik.com" title="Freepik">Freepik</a>
-   from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
   </div>
 
   <center>
@@ -946,158 +999,156 @@
 
   ;; This HTML code is inserted into the index page between the preamble and
   ;; the blog posts
-  (setq org-static-blog-index-front-matter
-  "<h1> Welcome to my blog </h1>\n")
+  (setq org-static-blog-index-front-matter "<h1> Welcome to my blog </h1>\n")
+
+  ;; Browse the Web (textually)
+  (setq browse-url-generic-program        (executable-find "chromium"))
+  (setq browse-url-browser-function       '(("." . eww-browse-url) ; Set EWW as the default web browser
+					    (".*google.*maps.*" . browse-url-generic)
+					    ;; Github goes to firefox, but not gist
+					    ("http.*\/\/github.com" . browse-url-generic)
+					    ("groups.google.com" . browse-url-generic)
+					    ("docs.google.com" . browse-url-generic)
+					    ("melpa.org" . browse-url-generic)
+					    ("zendesk\.com" . browse-url-generic)
+					    ("salesforce\.com" . browse-url-generic)
+					    ("stackoverflow\.com" . browse-url-generic)
+					    ("apache\.org\/jira" . browse-url-generic)
+					    ("thepoachedegg\.net" . browse-url-generic)
+					    ("zoom.us" . browse-url-generic)
+					    ("t.co" . browse-url-generic)
+					    ("twitter.com" . browse-url-generic)
+					    ("youtube.com" . browse-url-generic)
+					    ("amazon.com" . browse-url-generic)
+					    ("slideshare.net" . browse-url-generic)))
+
+  ;;
+  ;; ERC
+  ;;
+  (setq erc-server-history-list           '("irc.freenode.net" "localhost"))
+  (setq erc-nick                          "psg")
+  (setq erc-prompt                        (lambda () (concat "[" (buffer-name) "]"))) ;; Set ERC prompt to channel name
+  (setq erc-hide-list                     '("JOIN", "QUIT", "PART"))
+  ;; Reconnect to channels in the background
+  (setq erc-join-buffer                   'bury-buffer)
+  ;; Autojoin channels from different servers
+  (setq erc-autojoin-channels-alist       '(("freenode.net"
+					     "#lisp"
+					     "#clschool"
+					     "##lisp"
+					     "#lispcafe"
+					     "#slime"
+					     "#emacs"
+					     "#clojure")))
+
+  ;;
+  ;; Postgresql client: configuring SQLi
+  ;;
+  ;; Connect to a db automatically
+  (setq sql-postgres-login-params         '((user     :default "accrue")
+					    (database :default "accrue")
+					    (server   :default "localhost")
+					    (port     :default 5432)))
+  ;; Connect to multiple servers
+  (setq sql-connection-alist              '((server1
+					     (sql-product  'postgres)
+					     (sql-user     "publiclands")
+					     (sql-database "publiclands")
+					     (sql-server   "localhost")
+					     (sql-port     5432))
+					    (server2
+					     (sql-product  'postgres)
+					     (sql-user     "postgres")
+					     (sql-database "postgres")
+					     (sql-server   "localhost")
+					     (sql-port     5432))))
+
+  ;; Emacs Multimedia System
+  (setq emms-seek-seconds                 5)
+  (setq emms-player-list                  '(emms-player-mpd))
+  (setq emms-info-functions               '(emms-info-mpd))
+  (setq emms-player-mpd-server-name       "localhost")
+  (setq emms-player-mpd-server-port       "6601")) ;Muting is not implemented.
+
+  ;; Music Player Client
+  (setq mpc-host                          "localhost:6600")
+
+  ;; Company
+  (setq company-quickhelp-delay           1)
+
+  ;; iBuffer: Execute iBuffer commands immediately without asking for confirmation
+  (setq ibuffer-expert                    t)
+
+  ;; Dashboard
+  (setq dashboard-items                   '((recents . 12)))
+  (setq dashboard-banner-logo-title       "Hello!")
+
+  ;; Spaceline
+  (setq powerline-default-separator       (quote arrow))
+
+  ;; Projectile
+  (setq treemacs-position                      'right
+	treemacs-width                         24
+	;;treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+	treemacs-deferred-git-apply-delay      0.5
+	treemacs-directory-name-transformer    #'identity
+	treemacs-display-in-side-window        t
+	treemacs-eldoc-display                 t
+	treemacs-file-event-delay              5000
+	;;treemacs-file-extension-regex          treemacs-last-period-regex-value
+	treemacs-file-follow-delay             0.2
+	treemacs-file-name-transformer         #'identity
+	treemacs-follow-after-init             t
+	treemacs-git-command-pipe              ""
+	treemacs-goto-tag-strategy             'refetch-index
+	treemacs-indentation                   2
+	treemacs-indentation-string            " "
+	treemacs-is-never-other-window         nil
+	treemacs-max-git-entries               5000
+	treemacs-missing-project-action        'ask
+	treemacs-move-forward-on-expand        nil
+	treemacs-no-png-images                 nil
+	treemacs-no-delete-other-windows       t
+	treemacs-project-follow-cleanup        nil
+	treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+	treemacs-read-string-input             'from-child-frame
+	treemacs-recenter-distance             0.1
+	treemacs-recenter-after-file-follow    nil
+	treemacs-recenter-after-tag-follow     nil
+	treemacs-recenter-after-project-jump   'always
+	treemacs-recenter-after-project-expand 'on-distance
+	treemacs-show-cursor                   nil
+	treemacs-show-hidden-files             t
+	treemacs-silent-filewatch              nil
+	treemacs-silent-refresh                nil
+	treemacs-sorting                       'alphabetic-asc
+	treemacs-space-between-root-nodes      t
+	treemacs-tag-follow-cleanup            t
+	treemacs-tag-follow-delay              1.5
+	treemacs-user-mode-line-format         nil
+	treemacs-user-header-line-format       nil
+	treemacs-workspace-switch-cleanup      nil)
+
+  ;; Eshell: setting the prompt
+  (setq eshell-prompt-function
+	(lambda ()
+	  (concat "\n"
+		  (show-current-date-time)
+		  "\n"
+		  (getenv "USER") "@" (getenv "HOST") ":"
+		  ((lambda (p-lst)
+		     (mapconcat (lambda (elm) elm)
+				p-lst
+				"/"))
+		   (split-string (eshell/pwd) "/"))
+		  "\n"
+		  (if (= (user-uid) 0) "# " "$ "))))
+
+  ;; Interactive Do (Ido)
+  ;; (setq ido-everywhere t)
+  ;; (setq ido-enable-flex-matching nil)
+  ;; (setq ido-create-new-buffer 'always)
 #+end_src
-* Browsing the Web (textually)
-#+BEGIN_SRC emacs-lisp
-    (setq browse-url-generic-program (executable-find "chromium"))
-    (setq browse-url-browser-function
-	  '(("." . eww-browse-url) ; Set EWW as the default web browser
-	    (".*google.*maps.*" . browse-url-generic)
-	    ;; Github goes to firefox, but not gist
-	    ("http.*\/\/github.com" . browse-url-generic)
-	    ("groups.google.com" . browse-url-generic)
-	    ("docs.google.com" . browse-url-generic)
-	    ("melpa.org" . browse-url-generic)
-	    ("zendesk\.com" . browse-url-generic)
-	    ("salesforce\.com" . browse-url-generic)
-	    ("stackoverflow\.com" . browse-url-generic)
-	    ("apache\.org\/jira" . browse-url-generic)
-	    ("thepoachedegg\.net" . browse-url-generic)
-	    ("zoom.us" . browse-url-generic)
-	    ("t.co" . browse-url-generic)
-	    ("twitter.com" . browse-url-generic)
-	    ("youtube.com" . browse-url-generic)
-	    ("amazon.com" . browse-url-generic)
-	    ("slideshare.net" . browse-url-generic)))
-#+END_SRC
-* Communicating
-** ERC
-*** Some common settings
-#+BEGIN_SRC emacs-lisp
-  (setq erc-server-history-list '("irc.freenode.net" "localhost"))
-  (setq erc-nick "psg")
-  (setq erc-prompt (lambda () (concat "[" (buffer-name) "]")))   ; Set the prompt to match the name of the channel.
-  (setq erc-hide-list '("JOIN", "QUIT", "PART"))
-#+END_SRC
-*** Connecting to a server automatically
-#+BEGIN_SRC emacs-lisp
-  (defun irc
-      ()
-    "Connect to freenode."
-    (interactive)
-    (erc :server "irc.freenode.net"
-	 :port 6667
-	 :nick "pankajsg"
-	 :password "B0xm4k3r"))
-#+END_SRC
-*** Autojoining channels
-#+BEGIN_SRC emacs-lisp
-    ; Mention channels from different servers
-    (setq erc-autojoin-channels-alist '(("freenode.net"
-					 "#lisp"
-					 "#clschool"
-					 "##lisp"
-					 "#lispcafe"
-					 "#slime"
-					 "#emacs"
-					 "#clojure")))
-    ; Reconnect to channels in the background
-    (setq erc-join-buffer 'bury-buffer)
-#+END_SRC
-* Working with Databases
-** Setting up a Postgresql Client
-*** Configuring SQLi
-#+BEGIN_SRC emacs-lisp
-  ;;; Connect to a db automatically
-  (setq sql-postgres-login-params
-        '((user     :default "accrue")
-          (database :default "accrue")
-          (server   :default "localhost")
-          (port     :default 5432)))
-
-  ;;; Connect to multiple servers
-  (setq sql-connection-alist
-        '(
-          (server1
-           (sql-product  'postgres)
-           (sql-user     "publiclands")
-           (sql-database "publiclands")
-           (sql-server   "localhost")
-           (sql-port     5432)
-          (server2
-           (sql-product  'postgres)
-           (sql-user     "postgres")
-           (sql-database "postgres")
-           (sql-server   "localhost")
-           (sql-port     5432)))))
-
-  ;;; Open SQLi in the same window
-  (add-to-list 'same-window-buffer-names "*SQL*")
-
-  ;;; Save history between sessions
-  (defun save-sql-history ()
-    (let ((lval 'sql-input-ring-file-name)
-          (rval 'sql-product))
-      (if (symbol-value rval)
-          (let ((filename
-                 (concat "~/.emacs.d/sql/"
-                         (symbol-name (symbol-value rval))
-                         "-history.sql")))
-            (set (make-local-variable lval) filename))
-        (error
-         (format "SQL history will not be saved because %s is nil"
-                 (symbol-name rval))))))
-
-#+END_SRC
-* Playing music with Music Player
-** The music server
-*** Setting up the music server - Music Player daemon (mpd)
-#+BEGIN_SRC emacs-lisp
-  (use-package emms
-    :config (require 'emms-setup)
-	    (require 'emms-player-mpd)
-	    (emms-all)
-	    (setq emms-seek-seconds 5)
-	    (setq emms-player-list '(emms-player-mpd))
-	    (setq emms-info-functions '(emms-info-mpd))
-	    (setq emms-player-mpd-server-name "localhost")
-	    (setq emms-player-mpd-server-port "6601")) ; Muting is not implemented.
-#+END_SRC
-*** Starting the daemon from within Emacs
-#+BEGIN_SRC emacs-lisp
-  (defun mpd/start-daemon ()
-    "Starts mpd, connects to it and syncs the metadata cache."
-    (interactive)
-    (shell-command "mpd")
-    (mpd/update-database)
-    (emms-player-mpd-connect)
-    (emms-cache-set-from-mpd-all)
-    (message "MPD has been started."))
-#+END_SRC
-*** Updating the music database
-#+BEGIN_SRC emacs-lisp
-  (defun mpd/update-database ()
-    "Updates the MPD database synchronously."
-    (interactive)
-    (call-process "mpc" nil nil nil "update")
-    (message "Music database has been updated."))
-#+END_SRC
-*** Stopping the daemon
-#+BEGIN_SRC emacs-lisp
-  (defun mpd/stop-daemon ()
-    "Stops music playback and kills the music daemon."
-    (interactive)
-    (emms-stop)
-    (call-process "killall" nil nil nil "mpd")
-    (message "MPD has been stopped"))
-#+END_SRC
-** The music client
-*** Setting up the Music Player client (mpc)
-#+BEGIN_SRC emacs-lisp
-  (setq mpc-host "localhost:6600")
-#+END_SRC
 * Frequent operations
 #+BEGIN_SRC emacs-lisp
   (defun open-work-org ()
@@ -1108,6 +1159,48 @@
     (interactive)
     (find-file "~/.emacs.d/emacs.org"))
 #+END_SRC
+* Lists
+** Custom LaTeX class for Org-mode export
+#+begin_src emacs-lisp :results silent :exports none
+  (require 'ox-latex)
+
+  (unless (member "my/latex-default-class"
+		org-latex-classes)
+    (add-to-list 'org-latex-classes
+		 '("my/latex-default-class"
+		   "\\documentclass{scrartcl} [NO-DEFAULT-PACKAGES] [EXTRA]"
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
+  (unless (member "my/latex-koma-article-class"
+		  org-latex-classes)
+    (add-to-list 'org-latex-classes
+		 '("my/latex-koma-article-class"
+		   "\\documentclass{scrartcl}"
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
+  (unless (member "my/latex-article-class"
+		  org-latex-classes)
+    (add-to-list 'org-latex-classes
+		 '("my/latex-article-class"
+		   "\\documentclass[a4paper,12pt]{article}
+		    \\usepackage[utf8]{inputenc}
+		    \\usepackage{lmodern}
+		    \\usepackage[T1]{fontenc}
+		    \\usepackage{fixltx2e}"
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+end_src
 * Hooks
 #+begin_src emacs-lisp
   ;; After initialization of the Emacs session
@@ -1118,12 +1211,6 @@
 
   ;; Org
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode)))
-
-  ;; YAML
-  (add-hook 'yaml-mode-hook '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
-
-  ;; XRef backend
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 
   ;; Emacs Lisp
   (add-hook 'emacs-lisp-mode-hook #'electric-pair-mode)
@@ -1140,20 +1227,32 @@
   ;;Inferior Lisp
   (add-hook 'inferior-lisp-mode-hook (lambda () (inferior-slime-mode t)))
 
-  ;; Clojure using CIDER
+  ;; Clojure mode
   (add-hook 'clojure-mode-hook #'cider-mode)
+  (add-hook 'clojure-mode-hook #'zprint-mode)
+
+  ;; ClojureScript mode
+  (add-hook 'clojurescript-mode-hook #'cider-mode)
+  (add-hook 'clojurescript-mode-hook #'zprint-mode)
 
   ;; CIDER
   (add-hook 'cider-mode-hook #'company-mode)
   (add-hook 'cider-mode-hook #'rainbow-delimiters-mode)
-  ;(add-hook 'cider-mode-hook #'imenu-list)
   (add-hook 'cider-mode-hook #'cider-company-enable-fuzzy-completion)
   (add-hook 'cider-mode-hook (lambda ()
 			       (setq cider-eldoc-display-context-dependent-info t)))
+  ;; (add-hook 'cider-mode-hook #'imenu-list)
 
   ;; CIDER REPL
   (add-hook 'cider-repl-mode-hook #'company-mode)
   (add-hook 'cider-repl-mode-hook #'cider-company-enable-fuzzy-completion)
+
+  ;; zprint for Clojure and EDN files
+  (add-hook 'zprint-mode-hook #'zprint)
+
+  ;; AUCTeX
+  ;; Automatically activate TeX-fold-mode.
+  (add-hook 'TeX-mode-hook #'TeX-fold-mode)
 
   ;; SQL
   (add-hook 'sql-mode-hook 'sqlup-mode) ; Upcase SQL keywords
@@ -1162,6 +1261,13 @@
   (add-hook 'sql-interactive-mode-hook (lambda () (toggle-truncate-lines t)))
   (add-hook 'sql-interactive-mode-hook 'save-sql-history) ; Save history between sessions
   (add-hook 'sql-interactive-mode-hook 'sqlup-mode) ; Upcase SQL keywords
+
+  ;; YAML
+  (add-hook 'yaml-mode-hook '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
+
+  ;; XRef backend
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+
 #+end_src
 * Keybindings
 #+BEGIN_SRC emacs-lisp
@@ -1236,7 +1342,7 @@
   (global-set-key (kbd "C-SPC s r") 'popup-kill-ring)
 
   ;; Company (Complete-anything)
-  (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+  ;; (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
   (global-set-key (kbd "M-TAB") #'company-complete)
 
   ;;
@@ -1261,7 +1367,7 @@
   (global-set-key (kbd "C-SPC d e") 'my/dplct-expr-to-other-window)
   ;; SLIME
   (global-set-key (kbd "C-x C-p") 'slime-eval-print-last-expression)
-  ;(global-set-key (kbd "TAB") 'slime-complete-symbol)
+  (global-set-key (kbd "TAB") 'slime-complete-symbol)
 
   ;;
   ;; Applications
@@ -1350,23 +1456,25 @@
   ;; Save buffer
   (define-key key-translation-map (kbd "<f4>") (kbd "C-x C-s"))
 
-  ;; Evaluate expression
-  (define-key key-translation-map (kbd "<f5>") (kbd "C-SPC e e"))
+  ;; Undo
+  (define-key key-translation-map (kbd "<f5>") (kbd "C-x u"))
   ;; Duplicate expression in other window
   ;; (define-key key-translation-map (kbd "<f5>") (kbd "C-SPC d e"))
   ;; Wrap expression
   (define-key key-translation-map (kbd "<f6>") (kbd "C-SPC w e"))
+  ;; Kill expression
+  (define-key key-translation-map (kbd "<f7>") (kbd "C-SPC k e"))
   ;; Copy expression
-  (define-key key-translation-map (kbd "<f7>") (kbd "C-SPC K e"))
+  (define-key key-translation-map (kbd "S-<f7>") (kbd "C-SPC K e"))
   ;; Comment expression
   ;(define-key key-translation-map (kbd "<f7>") (kbd "C-SPC c e"))
-  ;; Kill expression
-  (define-key key-translation-map (kbd "<f8>") (kbd "C-SPC k e"))
+  ;; Evaluate expression
+  (define-key key-translation-map (kbd "<f8>") (kbd "C-SPC e e"))
   ;; Uncomment expression
   ;; (define-key key-translation-map (kbd "<f8>") (kbd "C-SPC C e"))
 
-  ;; Undo
-  (define-key key-translation-map (kbd "<f9>") (kbd "C-x u"))
+  ;; Launch ansi-term
+  (define-key key-translation-map (kbd "<f9>") (kbd "C-SPC l t"))
   ;; Launch iBuffer
   (define-key key-translation-map (kbd "<f10>") (kbd "C-x b"))
   ;; Open file
@@ -1381,9 +1489,11 @@
   ;; Kill line including trailing newline
   (define-key key-translation-map (kbd "C-<f2>") (kbd "C-SPC k l"))
   ;; Copy line including trailing newline
-  (define-key key-translation-map (kbd "C-<f3>") (kbd "C-SPC c l"))
+  (define-key key-translation-map (kbd "S-C-<f2>") (kbd "C-SPC c l"))
   ;; Duplicate entire line including trailing newline
-  (define-key key-translation-map (kbd "C-<f4>") (kbd "C-SPC d l"))
+  (define-key key-translation-map (kbd "C-<f3>") (kbd "C-SPC d l"))
+  ;; Duplicate expression in other window
+  (define-key key-translation-map (kbd "C-<f4>") (kbd "C-SPC d e"))
 
   ;; Copy line excluding trailing newline
   ;; (define-key key-translation-map (kbd "C-<f2>") (kbd "C-SPC c L"))
@@ -1399,10 +1509,8 @@
   ;; Cut
   (define-key key-translation-map (kbd "C-<f11>") (kbd "C-w"))
   ;; Copy
-  (define-key key-translation-map (kbd "C-<f12>") (kbd "M-w"))
+  (define-key key-translation-map (kbd "S-C-<f11>") (kbd "M-w"))
 
-  ;; Launch ansi-term
-  (define-key key-translation-map (kbd "M-<f1>") (kbd "C-SPC l t"))
   ;; Launch iBuffer
   (define-key key-translation-map (kbd "M-<f2>") (kbd "C-x b"))
   ;; Toggle (open or close) Org source block
