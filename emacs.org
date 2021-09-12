@@ -912,6 +912,12 @@
   ;; Parentheses in Lisp code
   (setq show-paren-style                  'mixed)
 
+  ;; For tooltips: Don't display help text automatically whenever it is available at point
+  (setq help-at-pt-display-when-idle nil)
+
+  ;; Workaround to continue to display tooltip indefinitely
+  (setq tooltip-hide-delay                3600)
+
   ;; Org code templates
   (setq org-structure-template-alist      '(("c" . "src clojure")
 					    ("e" . "src emacs-lisp")
@@ -942,14 +948,11 @@
   ;; Save the REPL history in this file
   (setq cider-repl-history-file "/home/p/.cider-repl-history")
 
-  ;; Where to show error messages
-  (setq cider-show-error-buffer 'only-in-repl)
+  ;; Do not automatically open the *cider-error* buffer in another window
+  (setq cider-show-error-buffer nil)
 
   ;; Custom prompt
   (setq cider-repl-prompt-function        #'my/cider-repl-prompt-default-newline)
-
-  ;; For tooltips: Display help text automatically whenever it is available at point
-  (setq help-at-pt-display-when-idle nil)
 
   ;; Show tooltips
   (setq cider-use-tooltips t)
