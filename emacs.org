@@ -9,46 +9,6 @@
 * TODO
   . Write descriptions for all custom functions
 
-* Custom functions
-#+begin_src emacs-lisp
-  ;;
-  ;; CIDER
-  ;;
-
-  ;; Show a fn or ns docstring's key pieces as inline overlay.
-  (require 'quick-peek)
-
-  (defvar my/cider-inline-docs-opened-p nil
-    "Toggle to support an inline help being open (expanded) or not.")
-
-  (defun my/cider-inline-docs-toggle
-      ()
-    "Show a fn or ns docstring's key pieces as inline overlay."
-    (interactive)
-    (require 'quick-peek)
-    (if my/cider-inline-docs-opened-p
-	(progn
-	  (setq my/cider-inline-docs-opened-p nil)
-	  (quick-peek-hide))
-      ;; If not on a word, let it error
-      (let* ((info    (cider-var-info (thing-at-point 'word 'no-properties)))
-	     ;; Built-in fns' info are indexed differently from user-defined.
-	     (arglist (nrepl-dict-get info "arglists-str"))
-	     (doc     (nrepl-dict-get info "doc")))
-	(if doc
-	    (progn
-	      (quick-peek-show
-	       (concat (if arglist (concat arglist "\n") "")
-		       (replace-regexp-in-string "^ +" "" doc)))
-	      (setq my/cider-inline-docs-opened-p t))
-	  (message "Unable to do doc look-up: missing docstring or invalid")))))
-
-  ;; Customize REPL prompt
-  (defun my/cider-repl-prompt-default-newline
-      (n)
-    "Takes the name of a namespace (N) and return the default REPL prompt followed by a newline."
-    (format "\n%s>\n" n))
-#+end_src
 * External packages
 #+BEGIN_SRC emacs-lisp
   ;; Use bullets in Org mode
@@ -957,7 +917,6 @@
   ;; Show tooltips
   (setq cider-use-tooltips t)
 
-
   ;;
   ;; Org static blog
   ;;
@@ -1181,8 +1140,8 @@
     (interactive)
     (find-file "~/.emacs.d/emacs.org"))
 #+END_SRC
-* Lists
-** Custom LaTeX class for Org-mode export
+* Custom Lists
+** LaTeX class for Org-mode export
 #+begin_src emacs-lisp :results silent :exports none
   (require 'ox-latex)
 
@@ -1222,6 +1181,62 @@
 		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
 		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
 		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+end_src
+* Custom functions
+#+begin_src emacs-lisp
+  ;;
+  ;; CIDER
+  ;;
+
+  ;; Customize REPL prompt
+  (defun my/cider-repl-prompt-default-newline
+      (n)
+    "Takes the name of a namespace (N) and return the default REPL prompt followed by a newline."
+    (format "\n%s>\n" n))
+
+  ;; Show a fn or ns docstring's key pieces as inline overlay.
+  (require 'quick-peek)
+
+  (defvar my/cider-inline-docs-opened-p nil
+    "Toggle to support an inline help being open (expanded) or not.")
+
+  (defun my/cider-inline-docs-toggle
+      ()
+    "Show a fn or ns docstring's key pieces as inline overlay."
+    (interactive)
+    (require 'quick-peek)
+    (if my/cider-inline-docs-opened-p
+	(progn
+	  (setq my/cider-inline-docs-opened-p nil)
+	  (quick-peek-hide))
+      ;; If not on a word, let it error
+      (let* ((info    (cider-var-info (thing-at-point 'word 'no-properties)))
+	     ;; Built-in fns' info are indexed differently from user-defined.
+	     (arglist (nrepl-dict-get info "arglists-str"))
+	     (doc     (nrepl-dict-get info "doc")))
+	(if doc
+	    (progn
+	      (quick-peek-show
+	       (concat (if arglist (concat arglist "\n") "")
+		       (replace-regexp-in-string "^ +" "" doc)))
+	      (setq my/cider-inline-docs-opened-p t))
+	  (message "Unable to do doc look-up: missing docstring or invalid")))))
+
+  ;; Similar to C-x C-e, but sends to REBL
+  (defun rebl-eval-last-sexp ()
+    (interactive)
+    (let* ((bounds (cider-last-sexp 'bounds))
+	   (s (cider-last-sexp))
+	   (reblized (concat "(cognitect.rebl/inspect " s ")")))
+      (cider-interactive-eval reblized nil bounds (cider--nrepl-print-request-map))))
+
+  ;; Similar to C-M-x, but sends to REBL
+  (defun rebl-eval-defun-at-point ()
+    (interactive)
+    (let* ((bounds (cider-defun-at-point 'bounds))
+	   (s (cider-defun-at-point))
+	   (reblized (concat "(cognitect.rebl/inspect " s ")")))
+      (cider-interactive-eval reblized nil bounds (cider--nrepl-print-request-map))))
 #+end_src
 * Hooks
 #+begin_src emacs-lisp
@@ -1264,6 +1279,12 @@
   (add-hook 'cider-mode-hook (lambda ()
 			       (setq cider-eldoc-display-context-dependent-info t)))
   ;; (add-hook 'cider-mode-hook #'imenu-list)
+  ;; C-S-x send defun to rebl
+  ;; C-x C-r send last sexp to rebl (Normally bound to "find-file-read-only"... Who actually uses that though?)
+  (add-hook 'cider-mode-hook
+	    (lambda ()
+	      (local-set-key (kbd "C-S-x") #'rebl-eval-defun-at-point)
+	      (local-set-key (kbd "C-x C-r") #'rebl-eval-last-sexp)))
 
   ;; CIDER REPL
   (add-hook 'cider-repl-mode-hook #'company-mode)
@@ -1555,4 +1576,18 @@
 
   ;; Set mark command ('visual' mode)
   (define-key key-translation-map (kbd "C-v") (kbd "C-SPC s m"))
+
+  ;;
+  ;; CIDER
+  ;;
+  ;; Make Return insert a newline into the REPL buffer and C-Return send the form
+  ;; off for evaluation.
+  (define-key cider-repl-mode-map (kbd "RET") #'cider-repl-newline-and-indent)
+  (define-key cider-repl-mode-map (kbd "C-<return>") #'cider-repl-return)
+
+  ;; Use "up" and "down" arrow keys to access previous and next inputs
+  (define-key cider-repl-mode-map (kbd "<up>") #'cider-repl-previous-input)
+  (define-key cider-repl-mode-map (kbd "<down>") #'cider-repl-next-input)
+
+  (define-key cider-repl-mode-map (kbd "M-<up>") (kbd "<up>"))
 #+END_SRC
