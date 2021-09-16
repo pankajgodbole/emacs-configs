@@ -125,8 +125,13 @@
   (use-package common-lisp-snippets
 	       :config (require 'common-lisp-snippets))
 
+  ;; Linter for Clojure (clj-kondo)
+  (use-package flycheck-clj-kondo)
+
   ;; Clojure
   (use-package clojure-mode)
+
+  ;; Clojure code formatter
   (use-package zprint-mode)
 
   ;; CIDER
@@ -1240,76 +1245,83 @@
 #+end_src
 * Hooks
 #+begin_src emacs-lisp
-  ;; After initialization of the Emacs session
-  (add-hook 'after-init-hook 'global-company-mode)
+    ;; After initialization of the Emacs session
+    (add-hook 'after-init-hook 'global-company-mode)
 
-  ;; Before a buffer is saved
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    ;; Before a buffer is saved
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-  ;; Org
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode)))
+    ;; Org
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode)))
 
-  ;; Emacs Lisp
-  (add-hook 'emacs-lisp-mode-hook #'electric-pair-mode)
+    ;; Emacs Lisp
+    (add-hook 'emacs-lisp-mode-hook #'electric-pair-mode)
 
-  ;; Common Lisp
-  (add-hook 'lisp-mode-hook #'electric-pair-mode)
-  (add-hook 'lisp-mode-hook (lambda () (slime-mode t)))
+    ;; Common Lisp
+    (add-hook 'lisp-mode-hook #'electric-pair-mode)
+    (add-hook 'lisp-mode-hook (lambda () (slime-mode t)))
 
-  ;; Use CL indentation rules which are different from Emacs Lisp indentation rules
-  ;; (add-hook 'lisp-mode-hook
-  ;; 	  (lambda () (set (make-local-variable lisp-indent-function)
-  ;; 		     'common-lisp-indent-function)))
+    ;; Use CL indentation rules which are different from Emacs Lisp indentation rules
+    ;; (add-hook 'lisp-mode-hook
+    ;; 	  (lambda () (set (make-local-variable lisp-indent-function)
+    ;; 		     'common-lisp-indent-function)))
 
-  ;;Inferior Lisp
-  (add-hook 'inferior-lisp-mode-hook (lambda () (inferior-slime-mode t)))
+    ;;Inferior Lisp
+    (add-hook 'inferior-lisp-mode-hook (lambda () (inferior-slime-mode t)))
 
-  ;; Clojure mode
-  (add-hook 'clojure-mode-hook #'cider-mode)
-  (add-hook 'clojure-mode-hook #'zprint-mode)
+    ;; Clojure mode
+    (add-hook 'clojure-mode-hook #'cider-mode)
+    (add-hook 'clojure-mode-hook #'zprint-mode)
+    (add-hook 'clojure-mode-hook #'flycheck-mode)
+    (add-hook 'clojure-mode-hook #'(lambda () (require 'flycheck-clj-kondo)))
 
-  ;; ClojureScript mode
-  (add-hook 'clojurescript-mode-hook #'cider-mode)
-  (add-hook 'clojurescript-mode-hook #'zprint-mode)
+    ;; ClojureScript mode
+    (add-hook 'clojurescript-mode-hook #'cider-mode)
+    (add-hook 'clojurescript-mode-hook #'zprint-mode)
 
-  ;; CIDER
-  (add-hook 'cider-mode-hook #'company-mode)
-  (add-hook 'cider-mode-hook #'rainbow-delimiters-mode)
-  (add-hook 'cider-mode-hook #'cider-company-enable-fuzzy-completion)
-  (add-hook 'cider-mode-hook (lambda ()
-			       (setq cider-eldoc-display-context-dependent-info t)))
-  ;; (add-hook 'cider-mode-hook #'imenu-list)
-  ;; C-S-x send defun to rebl
-  ;; C-x C-r send last sexp to rebl (Normally bound to "find-file-read-only"... Who actually uses that though?)
-  (add-hook 'cider-mode-hook
-	    (lambda ()
-	      (local-set-key (kbd "C-S-x") #'rebl-eval-defun-at-point)
-	      (local-set-key (kbd "C-x C-r") #'rebl-eval-last-sexp)))
+    ;; CIDER
+    (add-hook 'cider-mode-hook #'company-mode)
+    (add-hook 'cider-mode-hook #'rainbow-delimiters-mode)
+    (add-hook 'cider-mode-hook #'cider-company-enable-fuzzy-completion)
+    (add-hook 'cider-mode-hook (lambda ()
+				 (setq cider-eldoc-display-context-dependent-info t)))
+    ;; (add-hook 'cider-mode-hook #'imenu-list)
+    ;; C-S-x send defun to rebl
+    ;; C-x C-r send last sexp to rebl (Normally bound to "find-file-read-only"... Who actually uses that though?)
+    (add-hook 'cider-mode-hook
+	      (lambda ()
+		(local-set-key (kbd "C-S-x") #'rebl-eval-defun-at-point)
+		(local-set-key (kbd "C-x C-r") #'rebl-eval-last-sexp)))
 
-  ;; CIDER REPL
-  (add-hook 'cider-repl-mode-hook #'company-mode)
-  (add-hook 'cider-repl-mode-hook #'cider-company-enable-fuzzy-completion)
+    ;; CIDER REPL
+    (add-hook 'cider-repl-mode-hook #'company-mode)
+    (add-hook 'cider-repl-mode-hook #'cider-company-enable-fuzzy-completion)
+    ;; Use Ctrl-Down and Ctrl-Up to move to the next and previous line respectively
+    (add-hook 'cider-repl-mode-hook
+	      (lambda ()
+		(define-key key-translation-map (kbd "C-<down>") (kbd "C-n"))
+		(define-key key-translation-map (kbd "C-<up>") (kbd "C-p"))))
 
-  ;; zprint for Clojure and EDN files
-  (add-hook 'zprint-mode-hook #'zprint)
+    ;; zprint for Clojure and EDN files
+    (add-hook 'zprint-mode-hook #'zprint)
 
-  ;; AUCTeX
-  ;; Automatically activate TeX-fold-mode.
-  (add-hook 'TeX-mode-hook #'TeX-fold-mode)
+    ;; AUCTeX
+    ;; Automatically activate TeX-fold-mode.
+    (add-hook 'TeX-mode-hook #'TeX-fold-mode)
 
-  ;; SQL
-  (add-hook 'sql-mode-hook 'sqlup-mode) ; Upcase SQL keywords
+    ;; SQL
+    (add-hook 'sql-mode-hook 'sqlup-mode) ; Upcase SQL keywords
 
-  ;; SQL interactive mode
-  (add-hook 'sql-interactive-mode-hook (lambda () (toggle-truncate-lines t)))
-  (add-hook 'sql-interactive-mode-hook 'save-sql-history) ; Save history between sessions
-  (add-hook 'sql-interactive-mode-hook 'sqlup-mode) ; Upcase SQL keywords
+    ;; SQL interactive mode
+    (add-hook 'sql-interactive-mode-hook (lambda () (toggle-truncate-lines t)))
+    (add-hook 'sql-interactive-mode-hook 'save-sql-history) ; Save history between sessions
+    (add-hook 'sql-interactive-mode-hook 'sqlup-mode) ; Upcase SQL keywords
 
-  ;; YAML
-  (add-hook 'yaml-mode-hook '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
+    ;; YAML
+    (add-hook 'yaml-mode-hook '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
 
-  ;; XRef backend
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+    ;; XRef backend
+    (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 
 #+end_src
 * Keybindings
@@ -1577,9 +1589,11 @@
   ;; Set mark command ('visual' mode)
   (define-key key-translation-map (kbd "C-v") (kbd "C-SPC s m"))
 
+
   ;;
   ;; CIDER
   ;;
+
   ;; Make Return insert a newline into the REPL buffer and C-Return send the form
   ;; off for evaluation.
   (define-key cider-repl-mode-map (kbd "RET") #'cider-repl-newline-and-indent)
@@ -1588,6 +1602,4 @@
   ;; Use "up" and "down" arrow keys to access previous and next inputs
   (define-key cider-repl-mode-map (kbd "<up>") #'cider-repl-previous-input)
   (define-key cider-repl-mode-map (kbd "<down>") #'cider-repl-next-input)
-
-  (define-key cider-repl-mode-map (kbd "M-<up>") (kbd "<up>"))
 #+END_SRC
